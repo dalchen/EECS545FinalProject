@@ -15,8 +15,8 @@ class MarginSampler(Sampler):
     Based on Section 2.2 of this paper
     http://www.cs.columbia.edu/~prokofieva/CandidacyPapers/Chen_AL.pdf
     '''
-    def __init__(self, X_train, y_train):
-        super().__init__(X_train, y_train)
+    def __init__(self, X_train, y_train, X_unlabeled, y_unlabeled, batch_size=1):
+        super().__init__(X_train, y_train, X_unlabeled, y_unlabeled)
         logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
         logging.disable(logging.DEBUG)  # Comment out to turn on logging
 
@@ -25,7 +25,7 @@ class MarginSampler(Sampler):
         logging.debug("Fitting logistic regression to compute posteriors...")
         lr.fit(X_train, y_train)
         logging.debug("Finished fitting logistic regression")
-        self.posteriors = lr.predict_proba(X_train)
+        self.posteriors = lr.predict_proba(X_unlabeled)
 
         # Margin is measured as follows for sample n:
         # M_n = || Pr(c|x_n) - Pr(c'|x_n) ||
@@ -38,7 +38,7 @@ class MarginSampler(Sampler):
         self.num_sampled = 0
 
     def sample(self):
-        '''Return index of selected training sample.'''
+        '''Return index of selected training sample in X_unlabeled.'''
         sample_idx = self.sample_indices[self.num_sampled]
         self.num_sampled += 1
         return sample_idx
@@ -49,10 +49,15 @@ if __name__ == '__main__':
     from sklearn.model_selection import train_test_split
     from pprint import pprint
 
-    dataset = fetch_20newsgroups_vectorized(subset='train')
-    X_train = dataset.data
-    y_train = dataset.target
+    training_size = 100
+    max_unlabeled_size = 500
 
-    ms = MarginSampler(X_train, y_train)
+    dataset = fetch_20newsgroups_vectorized(subset='train')
+    X_train_base = dataset.data
+    y_train_base = dataset.target
+    X_train, y_train = X_train_base[:training_size], y_train_base[:training_size]
+    X_unlabeled, y_unlabeled = X_train_base[training_size:], y_train_base[training_size:]
+
+    ms = MarginSampler(X_train, y_train, X_unlabeled, y_unlabeled)
     print(ms.sample())
     print(ms.sample())
