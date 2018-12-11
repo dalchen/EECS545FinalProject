@@ -5,7 +5,7 @@ import pandas as pd
 import gzip
 from sklearn.model_selection import train_test_split, cross_val_score
 
-class Dataset:
+class amazonDataset:
 	def parse(path):
 	    g = gzip.open(path, 'r')
 	    for l in g:
