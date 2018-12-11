@@ -21,15 +21,15 @@ margin_test_y = 0
 
 #Initialize parameters and total number of labeled points
 num_total_sampled_data_points = 100
-lambda_value = 10**(-4)
+lambda_value = 10**(-4)#This needs to be tuned
 
-###Initialize vectors to be used for plotting
+#Initialize vectors to be used for plotting
 error_random_vector = []
 error_margin_vector = []
 num_samples_vector = []
 
 #Iterating through number of samples, and adding the resulting errors to plotting vectors
-for num_samples in range(3, num_total_sampled_data_points):
+for num_samples in range(3, num_total_sampled_data_points):#Each iteration you are using more labeled data points to train
     num_samples_vector.append(num_samples)
     error_random_vector.append(calculateError(random_train_x[:num_samples,:],random_train_y[:num_samples],random_test_x,random_test_y,lambda_value))
     error_margin_vector.append(calculateError(margin_train_x[:num_samples,:],margin_train_y[:num_samples],margin_test_x,margin_test_y,lambda_value))
