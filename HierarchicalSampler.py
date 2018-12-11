@@ -7,9 +7,9 @@ from sklearn.cluster import AgglomerativeClustering
 import itertools
 import numpy as np
 import random
-from pdb import set_trace
 import logging, sys
 
+from pdb import set_trace
 
 class Node:
     def __init__(self, node_id):
@@ -74,7 +74,33 @@ class HierarchicalSampler(Sampler):
             self.nodes[right_id] = right
 
         self.root = next(node_id for node_id in self.nodes if self.nodes[node_id].parent is None)
+        assert type(self.root) is int
         print(self.root)
+
+
+    def _get_upward_path(self, z, v):
+        '''Get list of node_ids from z to v inclusive in an upward path.
+
+        NOTE: z must be a descendant of v.
+        Used in the "Update empirical counts and probabilities" portion of the code.
+        '''
+        assert type(z) is int
+        assert type(v) is int
+
+        trail = [z]
+        cur = z
+        parent = nodes[cur].parent
+        while cur != v:
+            cur = parent
+            parent = nodes[cur].parent
+            trail.append(cur)
+            if cur is None:
+                raise ValueError('broken parent in node_id {}'.format(cur)) 
+        return trail
+
+
+        
+
 
 
 
