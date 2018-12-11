@@ -19,15 +19,18 @@ class Node:
         left -- Node object representing left child in clustering tree
         right -- Node object representing right child in clustering tree
         parent -- Node object representing parent in clustering tree
+        is_leaf -- boolean representing whether node is leaf node or not
         weight -- floating point number representing weight of subtree
+        subtree_leaves -- list of node objects representing the leaves in the subtree of this node
         class_to_instances -- dictionary from class --> int tallying the number of instances seen for a class
         '''
         self.id = node_id
         self.left = None
         self.right = None
         self.parent = None
-        self.weight = 0
         self.is_leaf = True
+        self.weight = 0
+        self.subtree_leaves = []
         self.class_to_instances = {}
 
 
@@ -40,11 +43,13 @@ class HierarchicalSampler(Sampler):
         # Hierarchical clustering portion
         self.root = None
         self.nodes = {}
+        self.num_leaves = 0
+
         self._construct_tree()
         self._compute_weights()
 
         # Hierarchical sampling portion
-        self.pruning = []
+        self.pruning = [self.root]
 
         
 
@@ -54,6 +59,7 @@ class HierarchicalSampler(Sampler):
         Modifies:
         self.root
         self.nodes
+        self.num_leaves
         '''
         # Run clustering based on merged partition of data
         print('constructing tree')
@@ -64,6 +70,7 @@ class HierarchicalSampler(Sampler):
         # Binary tree structure
         clustering = AgglomerativeClustering()
         clustering.fit(X_merged)
+        self.num_leaves = clustering.n_leaves_
         ii = itertools.count(X_merged.shape[0])
 
         # Convert dictionary representation of tree into linked list tree structure
@@ -106,42 +113,37 @@ class HierarchicalSampler(Sampler):
         '''
         
         # Helper function to process nodes in tree bottom-up
-        # TODO: could do 1-pass instead of 2-passes. Change later
-        def reverse_topological_sort():
+        def reverse_topological_process():
             visited = set()
-            top_sorted = []
+
             def visit(node_id):
                 visited.add(node_id)
                 node = self.nodes[node_id]
-                if node.left and node.left.id not in visited:
-                    visit(node.left.id)
-                if node.right and node.right.id not in visited:
-                    visit(node.right.id)
-                top_sorted.append(node_id)
+                if node.is_leaf:
+                    node.subtree_leaves.append(node)
+                else:
+                    if node.left and node.left.id not in visited:
+                        visit(node.left.id)
+                    if node.right and node.right.id not in visited:
+                        visit(node.right.id)
+                    node.subtree_leaves.extend(node.left.subtree_leaves)
+                    node.subtree_leaves.extend(node.right.subtree_leaves)
+                node.weight = len(node.subtree_leaves)
+                return
+
             for node_id in self.nodes:
                 if node_id not in visited:
                     visit(node_id)
-            return top_sorted
+            return
         
         print('computing weight for all nodes in tree')
 
-        # First set weight as number of leaf nodes that live in its subtree
-        sorted_node_ids = reverse_topological_sort()
-        num_leaves = 0
-        for node_id in sorted_node_ids:
-            node = self.nodes[node_id]
-            if node.is_leaf:
-                node.weight = 1
-                num_leaves += 1
-            else:
-                node.weight = node.left.weight + node.right.weight
+        # First find all leaf nodes in subtree
+        # and set weight as number of leaf nodes that live in its subtree
+        reverse_topological_process()
 
-        '''
-        for node_id, node in self.nodes.items():
-            print(str(node_id) + ": " + str(node.weight))
-        '''
         # Then normalize by total number of leaves in tree
-        n = 1.0 * num_leaves
+        n = 1.0 * self.num_leaves
         for node in self.nodes.values():
             node.weight /= n
             assert node.weight < n
@@ -200,6 +202,8 @@ class HierarchicalSampler(Sampler):
         In hierarchical sampling, this procedure should select the datapoint based
         on the rest of the unsampled data as well as the structure of the tree.
         '''
+        v = self.select()
+
         pass
 
 
