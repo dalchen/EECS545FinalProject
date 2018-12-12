@@ -12,6 +12,16 @@ import gzip
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.feature_extraction.text import TfidfVectorizer
 from scipy.sparse import coo_matrix, vstack
+import nltk
+import random
+import string
+from nltk.corpus import stopwords
+from nltk import pos_tag
+from nltk.stem import WordNetLemmatizer
+from nltk.corpus import movie_reviews
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 import numpy as np
 
@@ -19,6 +29,13 @@ from Sampling import Sampler
 from RandomSampling import RandomSampler
 from MarginSampling import MarginSampler
 from HierarchicalSampler import HierarchicalSampler
+from movieDataset import movieDataset
+#
+# nltk.download('movie_reviews')
+# nltk.download('stopwords')
+# nltk.download('averaged_perceptron_tagger')
+# nltk.download('wordnet')
+
 
 #This function takes in training and test data, calculates the logistic regression function, predicts test data, and returns the error
 def calculateError(x_train, y_train, x_test, y_test, lambda_value):
@@ -51,6 +68,7 @@ def Plotting(training_size, max_unlabeled_size, x_test, y_test, x_train_random, 
         i = i + 1
 
     # Plotting
+    data_set_title = "Movies"
     plt.gca().set_color_cycle(['red', 'green', 'blue'])
     plt.plot(num_samples_vector, error_random_vector)
     plt.plot(num_samples_vector, error_margin_vector)
@@ -58,7 +76,8 @@ def Plotting(training_size, max_unlabeled_size, x_test, y_test, x_train_random, 
     plt.legend(['Random', 'Margin', 'Hierarchical'], loc='upper right')
     plt.xlabel("Number Of Labels")
     plt.ylabel("Error")
-    plt.show()
+    # plt.show()
+    plt.savefig(data_set_title+str("_")+str(lambda_value)+".jpg")
 
 
 if __name__ == '__main__':
