@@ -19,7 +19,3 @@ class Sampler:
     def sample(self):
         pass
 
-    def reveal(self, sample_id):
-        pass
-
-

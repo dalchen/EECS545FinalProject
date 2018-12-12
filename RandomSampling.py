@@ -13,13 +13,8 @@ class RandomSampler(Sampler):
         random.shuffle(self.sampled_indices)
 
     def sample(self):
-        '''Return index of selected training sample in X_unlabeled.'''
-        return self.sampled_indices.pop()
-
-    def reveal(self, sample_id):
-        '''Return label of index of training sample in y_unlabeled.'''
-        '''THIS IS REDUNDANT.'''
-        return self.y_unlabeled[sample_id]
+        '''Return selected training sample in X_unlabeled.'''
+        return self.X_unlabeled[self.sampled_indices.pop()]
 
 
 
