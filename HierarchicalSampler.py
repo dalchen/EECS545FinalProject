@@ -57,8 +57,11 @@ class HierarchicalSampler(Sampler):
         self._compute_weights()
 
         # Hierarchical sampling portion
-        self.pruning = [self.root]
+        self.pruning = {self.root: -1}  # node_id --> majority_label
+        self.labels = set(self.y_merged)
         self.revealed = set()
+        self.admissible_set = set()
+        self.beta = 2.0
         '''
         self.labels = {self.root: np.random.choice(self.classes)}
         node = self.tree.get_node(self.root)
@@ -272,6 +275,7 @@ class HierarchicalSampler(Sampler):
         # "Tuning phase": exhaust all training data first
         # This conditional should be true ONLY during the tuning phase
         # Update nodes from leaf to root
+        # This phase should only execute once
         while len(self.revealed) < self.X_train.shape[0]:
             z_id = len(self.revealed)
             self.revealed.add(z_id)
@@ -281,7 +285,7 @@ class HierarchicalSampler(Sampler):
             # TODO: Do _update procedure and change self.pruning
             # If this is not done, this function will end up in an infinite loop.
             # so do this asap.
-            self._update()
+            self._update(list(range(self.X_merged.shape[0])), self.labels)
             pass
 
 
@@ -300,16 +304,129 @@ class HierarchicalSampler(Sampler):
             # Valid z when reach here
             z_label = self.y_merged[z_id]
             update_counts(z_label, z_id, v_id)
-            self._update()
+            self._update(self._get_upward_path(z_id, v_id), [z_label])
             break
         return z_id
 
-
-    def _update(self):
+    def _update(self, update_nodes, update_labels):
         '''Update. 
+
+        update_nodes -- list of nodes to update the admissible set with.
+        This is typically the upward path of the datapoint just sampled.
+
+        update_labels -- list of labels to update the admissible set with.
+        This is typically just a single label for the datapoint just sampled.
         '''
+        p_vl = {}  # (node_id, int label) --> float
+        for node_id, node in self.nodes.items():
+            for label in self.labels:
+                p_vl[(node_id,label)] = 0
+                if label in node.class_to_instances:
+                    class_revealed_count = node.class_to_instances[label]
+                    p_vl[(node_id,label)] = class_revealed_count / (1.0*node.num_revealed)
+
+        delta = {}
+        for vl in p_vl:
+            v_id, label = vl
+            delta[vl] = 0
+            n_v = self.nodes[v_id].num_revealed 
+            if n_v > 0:
+                delta[vl] = 1/n_v + (p_vl[vl] * (1-p_vl[vl]) / n_v)**0.5
+
+        # Math functions here
+        def p_LB(v_id, label):
+            vl = (v_id, label)
+            return max(p_vl[vl]-delta[vl] , 0.0)
+        def p_UB(v_id, label):
+            vl = (v_id, label)
+            return min(p_vl[vl]+delta[vl], 1.0)
+
+        p_vl_LB = {(node_id, label): p_LB(node_id, label) for (node_id, label) in p_vl}
+        p_vl_UB = {(node_id, label): p_UB(node_id, label) for (node_id, label) in p_vl}
+
+        # Update admissible set A
+        def is_admissible(v_id, label):
+            vl = (v_id, label)
+            # TODO: shouldn't happen, think tomorrow morning
+            if vl not in p_vl_LB:
+                print("vl not in p_vl_LB")
+                return False
+            lb = p_vl_LB[vl]
+            min_other = float('inf')
+            for lp in self.labels:
+                if lp != label:
+                    vlp = (v_id, lp)
+                    if vlp in p_vl_UB:
+                        min_other = min(min_other, 1 - p_vl_UB[vlp])
+                    # TODO: shouldn't happen, think tomorrow morning
+                    else:
+                        print("v_id,lp NOT IN UB DICTIONARY")
+                        import pdb; pdb.set_trace()
+            return 1 - lb < self.beta * min_other
+
+        for node_id in update_nodes:
+            for label in update_labels:
+                if is_admissible(node_id, label):
+                    self.admissible_set.add((node_id, label))
+
+        import pdb; pdb.set_trace()
+
+        # TODO: bottom up parsing
+        raise NotImplementedError
+
+        # Compute epsilon_tilda_vl and s_v values bottom-up
+        epsilon_tilda_vl = {}  # (node_id, int label) --> float
+        s_v = {}  # node_id --> P' and L' represented as {v_id: label}
+        # Helper function to process nodes in tree bottom-up
+        def bottom_up_compute():
+            visited = set()
+
+            def visit(node_id):
+                '''Return score and dict of {node_id: label}.'''
+                visited.add(node_id)
+
+                node = self.nodes[node_id]
+                left_score, right_score = 0, 0
+                left_mappings, right_mappings = {}, {}
+                if node.left and node.left.id not in visited:
+                    left_score, left_labels = visit(node.left.id)
+                if node.right and node.right.id not in visited:
+                    right_score, right_labels = visit(node.right.id)
+
+                # All children have been visited
+                has_admissible = False
+                best_epsilon, best_mappings = -float('inf'), {node_id}
+                for label in node.class_to_instances:
+                    vl = (node_id, label)
+                    if vl in self.admissible_set:
+                        has_admissible = True
+                        epsilon_tilda_vl[vl] = 1 - p_vl[vl]
+                    else:
+                        epsilon_tilda_vl[vl] = 1
+                    if epsilon_tilda_vl[vl] < best_epsilon:
+                        best_epsilon, best_label = epsilon_tilda_vl[vl], set([label])
+                if has_admissible:
+                    assert best_label is not None
+                    w_v = node.weight
+                    children_score, children_labels = 0, 
+                    if left_label: children_score += (node.left.weight / w_v) * left_score
+                    if right_label: children_score += (node.right.weight / w_v) * right_score
+
+                assert best_label is not None
+
+                return best_epsilon, best_label
+
+            for node_id in self.nodes:
+                if node_id not in visited:
+                    s_v[node_id] = visit(node_id)
+            return
+
+        #bottom_up_compute()
+
+
         print("TODO: IMPLEMENT THIS.")
         raise NotImplementedError
+        
 
 if __name__ == '__main__':
     from sklearn.datasets import fetch_20newsgroups_vectorized
