@@ -1,0 +1,21 @@
+#!/bin/sh
+#PBS -S /bin/sh
+#PBS -N flux_execution_results
+#PBS -A stats_flux
+#PBS -l qos=flux
+#PBS -l procs=36,walltime=00:10:00
+#PBS -l pmem=100mb
+#PBS -q flux
+#PBS -m abe
+#PBS -j oe
+#PBS -V
+#PBS -M datahong@umich.edu
+echo "I ran on:"
+cat $PBS_NODEFILE
+# Let PBS handle your output
+# This part is where you can pretend you have control over the flux machine
+# You can do things like cd, ./movieReviews.py, etc...
+
+module load python-anaconda3
+cd ~/EECS545FinalProject
+./RandomSampling.py
