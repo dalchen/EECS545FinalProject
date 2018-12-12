@@ -270,7 +270,7 @@ class HierarchicalSampler(Sampler):
 
 
     def sample(self):
-        '''Return selected training sample in X_unlabeled.
+        '''Return selected training sample in X_unlabeled and corresponding label.
 
         In hierarchical sampling, this procedure should select the datapoint based
         on the rest of the unsampled data as well as the structure of the tree.
@@ -303,7 +303,7 @@ class HierarchicalSampler(Sampler):
             break
         # Return sample when actually using sampler
         if not self.tuning_phase:
-            return self.X_merged[z_id]
+            return self.X_merged[z_id], self.y_merged[z_id]
 
     def _update(self, update_nodes, update_labels):
         '''Update. 

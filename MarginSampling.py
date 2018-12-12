@@ -38,10 +38,10 @@ class MarginSampler(Sampler):
         self.num_sampled = 0
 
     def sample(self):
-        '''Return selected training sample in X_unlabeled.'''
+        '''Return selected training sample in X_unlabeled and corresponding label.'''
         sample_idx = self.sample_indices[self.num_sampled]
         self.num_sampled += 1
-        return self.X_unlabeled[sample_idx]
+        return self.X_unlabeled[sample_idx], self.y_unlabeled[sample_idx]
 
 
 if __name__ == '__main__':

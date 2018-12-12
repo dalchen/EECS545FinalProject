@@ -13,8 +13,9 @@ class RandomSampler(Sampler):
         random.shuffle(self.sampled_indices)
 
     def sample(self):
-        '''Return selected training sample in X_unlabeled.'''
-        return self.X_unlabeled[self.sampled_indices.pop()]
+        '''Return selected training sample in X_unlabeled and corresponding label.'''
+        sample_idx = self.sampled_indices.pop()
+        return self.X_unlabeled[sample_idx], self.y_unlabeled[sample_idx]
 
 
 
