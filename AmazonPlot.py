@@ -84,8 +84,8 @@ if __name__ == '__main__':
     '''
 
     print("Start")
-    training_size = 10
-    max_unlabeled_size = 20
+    training_size = 5
+    max_unlabeled_size = 15
 
     ########################Amazon
     # load the amazon dataset
