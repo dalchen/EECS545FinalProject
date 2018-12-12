@@ -4,6 +4,8 @@
 from Sampling import Sampler
 from sklearn.linear_model import LogisticRegression
 from sklearn.cluster import AgglomerativeClustering
+from scipy.sparse import vstack
+from collections import defaultdict
 import itertools
 import numpy as np
 import random
@@ -23,15 +25,19 @@ class Node:
         weight -- floating point number representing weight of subtree
         subtree_leaves -- list of node objects representing the leaves in the subtree of this node
         class_to_instances -- dictionary from class --> int tallying the number of instances seen for a class
+        num_revealed -- integer representing number of samples revealed that live under this node
         '''
         self.id = node_id
         self.left = None
         self.right = None
         self.parent = None
+
         self.is_leaf = True
         self.weight = 0
         self.subtree_leaves = []
-        self.class_to_instances = {}
+
+        self.class_to_instances = defaultdict(int)
+        self.num_revealed = 0
 
 
 
@@ -41,6 +47,8 @@ class HierarchicalSampler(Sampler):
     def __init__(self, X_train, y_train, X_unlabeled, y_unlabeled, batch_size=1):
         super().__init__(X_train, y_train, X_unlabeled, y_unlabeled)
         # Hierarchical clustering portion
+        self.X_merged = None
+        self.y_merged = None
         self.root = None
         self.nodes = {}
         self.num_leaves = 0
@@ -50,8 +58,22 @@ class HierarchicalSampler(Sampler):
 
         # Hierarchical sampling portion
         self.pruning = [self.root]
+        self.revealed = set()
+        '''
+        self.labels = {self.root: np.random.choice(self.classes)}
+        node = self.tree.get_node(self.root)
+        node.best_label = self.labels[self.root]
+        self.selected_nodes = [self.root]
+        '''
+        return
 
-        
+
+    def _is_unlabeled(self, node_id):
+        '''Return if node_id (corresponding to sample) is part
+        of the unlabeled set.
+        '''
+        assert node_id < self.X_train.shape[0] + self.X_unlabeled.shape[0]
+        return node_id >= self.X_train.shape[0] 
 
     def _construct_tree(self):
         '''Construct tree object from clusters.
@@ -63,15 +85,23 @@ class HierarchicalSampler(Sampler):
         '''
         # Run clustering based on merged partition of data
         print('constructing tree')
+
+        # TODO: for testing purposes
+        # Remove for production purposes
+        self.X_unlabeled = self.X_unlabeled[:150]
+        self.y_unlabeled = self.y_unlabeled[:150]
+
         # TODO: merge X_train and X_unlabeled
-        X_merged = X_train.toarray()
-        y_merged = y_train
+        self.X_merged = vstack([self.X_train, self.X_unlabeled]).toarray()
+        self.y_merged = np.concatenate((self.y_train, self.y_unlabeled))
 
         # Binary tree structure
         clustering = AgglomerativeClustering()
-        clustering.fit(X_merged)
+        clustering.fit(self.X_merged)
         self.num_leaves = clustering.n_leaves_
-        ii = itertools.count(X_merged.shape[0])
+        # INTERPRETATION: each leaf is a 1-to-1 mapping to a sample.
+        assert self.num_leaves == self.X_merged.shape[0]
+        ii = itertools.count(self.X_merged.shape[0])
 
         # Convert dictionary representation of tree into linked list tree structure
         def findNode(idx):
@@ -92,11 +122,9 @@ class HierarchicalSampler(Sampler):
 
         # Mark root node and any leaf nodes
         self.root = next(node_id for node_id in self.nodes if self.nodes[node_id].parent is None)
-        leaves = []
         for node_id, node in self.nodes.items():
             if node.left or node.right:
                 node.is_leaf = False
-                leaves.append(node_id)
 
         assert type(self.root) is int
         #print(self.root)
@@ -150,21 +178,19 @@ class HierarchicalSampler(Sampler):
         return
 
 
-    def _get_upward_path(self, z, v):
+    def _get_upward_path(self, z_id, v_id):
         '''Get list of node_ids from z to v inclusive in an upward path.
 
         NOTE: z must be a descendant of v.
         Used in the "Update empirical counts and probabilities" portion of the code.
         '''
-        assert type(z) is int
-        assert type(v) is int
-
-        trail = [z]
-        cur = z
-        parent = nodes[cur].parent
-        while cur != v:
+        trail = [z_id]
+        cur = z_id
+        parent = self.nodes[cur].parent.id
+        while cur != v_id:
             cur = parent
-            parent = nodes[cur].parent
+            try: parent = self.nodes[cur].parent.id
+            except: pass
             trail.append(cur)
             if cur is None:
                 raise ValueError('broken parent in node_id {}'.format(cur)) 
@@ -180,20 +206,51 @@ class HierarchicalSampler(Sampler):
         '''
 
         def method_1():
-            '''Return node_id v in Pruning
+            '''Return node_id v in Pruning.
             
             (1) choose v in Pruning with probability proportional to w_v.
             This is similar to random sampling.'''
             # Normalize weights
             weights = [self.nodes[node_id].weight for node_id in self.pruning]
-            v = np.random.choice(weights, size=None, replace=True, p=weights)
-            print(v)
+            v = np.random.choice(self.pruning, size=None, replace=True, p=weights)
             return v
+        
+        def method_2():
+            pass
+        def method_3():
+            pass
+        
+
+        return method_1()
 
 
-        pass
+    def _pick_sample_id_from_node(self, node_id):
+        '''Pick a random point (node id) z from subtree T_{node_id}.
+       
+        Modifies:
+        self.nodes[node_id].all_sampled
+        '''
+        # TODO: use margin sampling to find a weighted random sample for better performance.
+        # For now, follow the algorithm.
 
+        # First always choose training (labeled) data.
+        # If none are training (labeled), then pick random from unlabeled
+        sample_ids = []
+        for leaf in self.nodes[node_id].subtree_leaves: 
+            sample_id = leaf.id
+            if sample_id not in self.revealed:
+                # Always prefer training data
+                if not self._is_unlabeled(sample_id):
+                    self.revealed.add(sample_id)
+                    return sample_id
+                sample_ids.append(sample_id)
 
+        if len(sample_ids) > 0:
+            return None
+
+        unlabeled_id = random.choice(sample_ids)
+        self.revealed.add(unlabeled_id)
+        return random.choice(sample_ids)
 
 
     def sample(self):
@@ -202,9 +259,30 @@ class HierarchicalSampler(Sampler):
         In hierarchical sampling, this procedure should select the datapoint based
         on the rest of the unsampled data as well as the structure of the tree.
         '''
-        v = self.select()
 
-        pass
+        v_id, z_id = -1, -1  # sentinel values
+
+        while True:
+            # Loop section begin: keep looping because node v may have 
+            # all its associated samples revealed already.
+            v_id = self._select()
+            z_id = self._pick_sample_id_from_node(v_id)
+
+            if z_id is None:
+                print("finding another node to draw sanmples from")
+                continue
+            # Loop section end
+            
+            # Valid z when reach here
+            z_label = self.y_merged[z_id]
+
+            # Update empirical counts and probabilities
+            for node_id in self._get_upward_path(z_id, v_id):
+                node = self.nodes[node_id]
+                node.class_to_instances[z_label] += 1
+                node.num_revealed += 1
+            break
+        return z_id
 
 
     def _update(self):
@@ -227,3 +305,4 @@ if __name__ == '__main__':
     X_unlabeled, y_unlabeled = X_train_base[training_size:], y_train_base[training_size:]
 
     hs = HierarchicalSampler(X_train, y_train, X_unlabeled, y_unlabeled)
+    print(hs.sample())
