@@ -62,6 +62,7 @@ def Plotting(training_size, max_unlabeled_size, x_test, y_test, x_train_random, 
         i = i + 1
 
     # Plotting
+    data_set_title = "Amazon"
     plt.gca().set_color_cycle(['red', 'green', 'blue'])
     plt.plot(num_samples_vector, error_random_vector)
     plt.plot(num_samples_vector, error_margin_vector)
@@ -69,7 +70,8 @@ def Plotting(training_size, max_unlabeled_size, x_test, y_test, x_train_random, 
     plt.legend(['Random', 'Margin', 'Hierarchical'], loc='upper right')
     plt.xlabel("Number Of Labels")
     plt.ylabel("Error")
-    plt.show()
+    # plt.show()
+    plt.savefig(data_set_title+str("_")+str(lambda_value)+".jpg")
 
 
 if __name__ == '__main__':
@@ -79,8 +81,8 @@ if __name__ == '__main__':
     '''
 
     print("Start")
-    training_size = 5
-    max_unlabeled_size = 5
+    training_size = 5#100
+    max_unlabeled_size = 5#400#20% of the data maybe
     lambda_value = 10**(-4)#This needs to be tuned
 
     ########################Amazon
