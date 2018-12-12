@@ -7,6 +7,7 @@ from nltk.stem import WordNetLemmatizer
 from nltk.corpus import movie_reviews
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 #need to download these packages from nltk initially
 
@@ -48,6 +49,8 @@ if __name__ == '__main__':
 	modified_docs = [(movieDataset.clean(docs), category) for docs, category in docs]
 	text_docs = [" ".join(docs) for docs, category in modified_docs]
 	category = [category for docs, category in modified_docs]
+	tfidf = TfidfVectorizer()
+	text_docs = tfidf.fit_transform(text_docs)
 	x_train, x_test, y_train, y_test = train_test_split(text_docs, category, random_state=0)
 
 	print('Successfully loaded the dataset into train and test set.')
