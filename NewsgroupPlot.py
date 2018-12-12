@@ -68,8 +68,8 @@ if __name__ == '__main__':
     '''
 
     print("Start")
-    training_size = 2
-    max_unlabeled_size = 10
+    training_size = 2#100
+    max_unlabeled_size = 10#400
 
     #Newsgroup Data
     train_dataset = fetch_20newsgroups_vectorized(subset='train')
