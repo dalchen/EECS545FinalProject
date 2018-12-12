@@ -91,7 +91,6 @@ class HierarchicalSampler(Sampler):
         self.X_unlabeled = self.X_unlabeled[:150]
         self.y_unlabeled = self.y_unlabeled[:150]
 
-        # TODO: merge X_train and X_unlabeled
         self.X_merged = vstack([self.X_train, self.X_unlabeled]).toarray()
         self.y_merged = np.concatenate((self.y_train, self.y_unlabeled))
 
@@ -178,6 +177,7 @@ class HierarchicalSampler(Sampler):
         return
 
 
+    # TODO: lru cache decorator with size power of 2
     def _get_upward_path(self, z_id, v_id):
         '''Get list of node_ids from z to v inclusive in an upward path.
 
@@ -253,6 +253,7 @@ class HierarchicalSampler(Sampler):
         return random.choice(sample_ids)
 
 
+
     def sample(self):
         '''Return index of selected training sample in X_unlabeled.
 
@@ -260,8 +261,32 @@ class HierarchicalSampler(Sampler):
         on the rest of the unsampled data as well as the structure of the tree.
         '''
 
-        v_id, z_id = -1, -1  # sentinel values
+        # Helper function to update empirical counts and probabilities
+        def update_counts(z_label, z_id, v_id):
+            for node_id in self._get_upward_path(z_id, v_id):
+                node = self.nodes[node_id]
+                node.class_to_instances[z_label] += 1
+                node.num_revealed += 1
+            return
 
+        # "Tuning phase": exhaust all training data first
+        # This conditional should be true ONLY during the tuning phase
+        # Update nodes from leaf to root
+        while len(self.revealed) < self.X_train.shape[0]:
+            z_id = len(self.revealed)
+            self.revealed.add(z_id)
+            z_label = self.y_merged[z_id]
+            update_counts(z_label, z_id, self.root)
+        if len(self.revealed) == self.X_train.shape[0]:
+            # TODO: Do _update procedure and change self.pruning
+            # If this is not done, this function will end up in an infinite loop.
+            # so do this asap.
+            self._update()
+            pass
+
+
+        # After the tuning phase
+        v_id, z_id = -1, -1  # sentinel values
         while True:
             # Loop section begin: keep looping because node v may have 
             # all its associated samples revealed already.
@@ -271,16 +296,11 @@ class HierarchicalSampler(Sampler):
             if z_id is None:
                 print("finding another node to draw sanmples from")
                 continue
-            # Loop section end
-            
+            # Loop section end.
             # Valid z when reach here
             z_label = self.y_merged[z_id]
-
-            # Update empirical counts and probabilities
-            for node_id in self._get_upward_path(z_id, v_id):
-                node = self.nodes[node_id]
-                node.class_to_instances[z_label] += 1
-                node.num_revealed += 1
+            update_counts(z_label, z_id, v_id)
+            self._update()
             break
         return z_id
 
@@ -288,7 +308,8 @@ class HierarchicalSampler(Sampler):
     def _update(self):
         '''Update. 
         '''
-        pass
+        print("TODO: IMPLEMENT THIS.")
+        raise NotImplementedError
 
 if __name__ == '__main__':
     from sklearn.datasets import fetch_20newsgroups_vectorized
@@ -305,4 +326,9 @@ if __name__ == '__main__':
     X_unlabeled, y_unlabeled = X_train_base[training_size:], y_train_base[training_size:]
 
     hs = HierarchicalSampler(X_train, y_train, X_unlabeled, y_unlabeled)
+    for _ in range(X_train.shape[0]):
+        print(hs.sample())
+    '''
+    print("After all X_train")
     print(hs.sample())
+    '''
