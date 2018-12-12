@@ -6,6 +6,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.cluster import AgglomerativeClustering
 from scipy.sparse import vstack
 from collections import defaultdict
+from functools import lru_cache
 import itertools
 import numpy as np
 import random
@@ -70,14 +71,6 @@ class HierarchicalSampler(Sampler):
         self.tuning_phase = False
         print('Tuning phase complete. Ready to use sampler.')
 
-
-
-        '''
-        self.labels = {self.root: np.random.choice(self.classes)}
-        node = self.tree.get_node(self.root)
-        node.best_label = self.labels[self.root]
-        self.selected_nodes = [self.root]
-        '''
         return
 
 
@@ -190,7 +183,7 @@ class HierarchicalSampler(Sampler):
         return
 
 
-    # TODO: lru cache decorator with size power of 2
+    @lru_cache(maxsize=256)
     def _get_upward_path(self, z_id, v_id):
         '''Get list of node_ids from z to v inclusive in an upward path.
 
