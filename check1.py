@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 from matplotlib import pyplot as plt
@@ -11,37 +13,12 @@ from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.feature_extraction.text import TfidfVectorizer
 from scipy.sparse import coo_matrix, vstack
 
-
-
-#!/usr/bin/env python3
-# from Sampling import Sampler
 import numpy as np
-class Sampler:
-    '''
-    This is the base class for which the 3 different sampling classes
-    (Random, Uncertainty, and Hierarchical) inherit from.
-    '''
-    def __init__(self, X_train, y_train, X_unlabeled, y_unlabeled, batch_size=1):
-        self.X_train = X_train
-        self.y_train = y_train
-        self.X_unlabeled = X_unlabeled
-        self.y_unlabeled = y_unlabeled
-        self.batch_size = batch_size
 
-    def sample(self):
-        pass
-
-class RandomSampler(Sampler):
-    def __init__(self, X_train, y_train, X_unlabeled, y_unlabeled, batch_size=1):
-        import random
-        super().__init__(X_train, y_train, X_unlabeled, y_unlabeled)
-        self.sampled_indices = list(range(X_unlabeled.shape[0]))
-        random.shuffle(self.sampled_indices)
-
-    def sample(self):
-        '''Return selected training sample in X_unlabeled and corresponding label.'''
-        sample_idx = self.sampled_indices.pop()
-        return self.X_unlabeled[sample_idx], self.y_unlabeled[sample_idx]
+from Sampling import Sampler
+from RandomSampling import RandomSampler
+from MarginSampling import MarginSampler
+from HierarchicalSampler import HierarchicalSampler
 
 class amazonDataset():
     def parse(path):
