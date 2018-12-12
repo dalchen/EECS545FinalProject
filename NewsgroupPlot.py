@@ -20,22 +20,6 @@ from RandomSampling import RandomSampler
 from MarginSampling import MarginSampler
 from HierarchicalSampler import HierarchicalSampler
 
-class amazonDataset():
-    def parse(path):
-        g = gzip.open(path, 'r')
-        for l in g:
-            yield eval(l)
-
-    def getDF(path):
-        i = 0
-        df = {}
-        for d in amazonDataset.parse(path):
-            df[i] = d
-            i += 1
-        ''' Return python dataframe of the data '''
-        return pd.DataFrame.from_dict(df, orient='index')
-
-
 #This function takes in training and test data, calculates the logistic regression function, predicts test data, and returns the error
 def calculateError(x_train, y_train, x_test, y_test, lambda_value):
     clf = LogisticRegression(random_state=0, solver='lbfgs', C=1/lambda_value, multi_class='multinomial').fit(x_train, y_train)
@@ -85,7 +69,7 @@ if __name__ == '__main__':
 
     print("Start")
     training_size = 2
-    max_unlabeled_size = 5
+    max_unlabeled_size = 10
 
     #Newsgroup Data
     train_dataset = fetch_20newsgroups_vectorized(subset='train')
