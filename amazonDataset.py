@@ -4,6 +4,7 @@ import gzip
 import pandas as pd
 import gzip
 from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 class amazonDataset():
 	def parse(path):
@@ -23,6 +24,8 @@ class amazonDataset():
 if __name__ == '__main__':
 	#load the amazon dataset
 	amazon = amazonDataset.getDF('reviews_Musical_Instruments_5.json.gz')
+	tfidf = TfidfVectorizer()
+	X = tfidf.fit_transform(amazon.reviewText)
 	#split train and test data #overall refers to the ratings
-	x_train, x_test, y_train, y_test = train_test_split(amazon.reviewText, amazon.overall, random_state=0)
+	x_train, x_test, y_train, y_test = train_test_split(X, amazon.overall, random_state=0)
 	print('Successfully loaded the dataset into train and test set.')
