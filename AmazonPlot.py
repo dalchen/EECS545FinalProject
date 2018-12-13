@@ -83,7 +83,7 @@ if __name__ == '__main__':
     print("Start")
     training_size = 5#100
     max_unlabeled_size = 5#400#20% of the data maybe
-    lambda_value = 10**(-4)#This needs to be tuned
+    # lambda_value = 10**(-4)#This needs to be tuned
 
     ########################Amazon
     # load the amazon dataset
@@ -127,4 +127,6 @@ if __name__ == '__main__':
         x_train_Hierarchical = vstack([x_train_Hierarchical, x_sample]).toarray()
         y_train_Hierarchical = np.append(y_train_Hierarchical, y_sample)
 
-    Plotting(training_size, max_unlabeled_size, X_test, y_test, x_train_random, y_train_random, x_train_margin, y_train_margin, x_train_Hierarchical, y_train_Hierarchical, lambda_value)
+    for i in range(-8,9):
+        lambda_value = 10**(i)
+        Plotting(training_size, max_unlabeled_size, X_test, y_test, x_train_random, y_train_random, x_train_margin, y_train_margin, x_train_Hierarchical, y_train_Hierarchical, lambda_value)
