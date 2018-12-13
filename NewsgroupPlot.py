@@ -75,12 +75,19 @@ if __name__ == '__main__':
     train_dataset = fetch_20newsgroups_vectorized(subset='train')
     X_train_base = train_dataset.data
     y_train_base = train_dataset.target
-    X_train, y_train = X_train_base[:training_size], y_train_base[:training_size]
-    X_unlabeled, y_unlabeled = X_train_base[training_size:], y_train_base[training_size:]
 
     test_dataset = fetch_20newsgroups_vectorized(subset='test')
     X_test = test_dataset.data
+    X_test = vstack([X_test, X_train_base[2000:,:]]).toarray()
     y_test = test_dataset.target
+    y_test = np.append(y_test, y_train_base[2000:])
+
+    X_train_base = X_train_base[:2000,:]
+    y_train_base = y_train_base[:2000]
+
+    X_train, y_train = X_train_base[:training_size], y_train_base[:training_size]
+    X_unlabeled, y_unlabeled = X_train_base[training_size:], y_train_base[training_size:]
+
     rs = RandomSampler(X_train, y_train, X_unlabeled, y_unlabeled)
     ms = MarginSampler(X_train, y_train, X_unlabeled, y_unlabeled)
     hs = HierarchicalSampler(X_train, y_train, X_unlabeled, y_unlabeled)
@@ -112,4 +119,5 @@ if __name__ == '__main__':
 
     for i in range(-8,9):
         lambda_value = 10**(i)
+        print("Lambda = " + str(lambda_value))
         Plotting(training_size, max_unlabeled_size, X_test, y_test, x_train_random, y_train_random, x_train_margin, y_train_margin, x_train_Hierarchical, y_train_Hierarchical, lambda_value)
