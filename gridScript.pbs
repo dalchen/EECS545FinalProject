@@ -3,8 +3,7 @@
 #PBS -N flux_execution_results
 #PBS -A stats_flux
 #PBS -l qos=flux
-#PBS -l procs=36,walltime=00:10:00
-#PBS -l pmem=100mb
+#PBS -l nodes=1:procs=12,pmem=4000mb,walltime=00:20:00
 #PBS -q flux
 #PBS -m abe
 #PBS -j oe
@@ -16,6 +15,6 @@ cat $PBS_NODEFILE
 # This part is where you can pretend you have control over the flux machine
 # You can do things like cd, ./movieReviews.py, etc...
 
-module load python-anaconda3
+# module load python-anaconda3
 cd ~/EECS545FinalProject
-./RandomSampling.py
+./NewsgroupPlot.py
