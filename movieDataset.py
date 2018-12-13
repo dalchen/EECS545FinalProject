@@ -127,8 +127,8 @@ if __name__ == '__main__':
     '''
 
     print("Start")
-    training_size = 2
-    max_unlabeled_size = 5
+    training_size = 100
+    max_unlabeled_size = 400
     lambda_value = 10**(-4)#This needs to be tuned
 
 
