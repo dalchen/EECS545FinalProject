@@ -94,8 +94,8 @@ class HierarchicalSampler(Sampler):
 
         # TODO: for testing purposes
         # Remove for production purposes
-        self.X_unlabeled = self.X_unlabeled[:150]
-        self.y_unlabeled = self.y_unlabeled[:150]
+        #self.X_unlabeled = self.X_unlabeled[:150]
+        #self.y_unlabeled = self.y_unlabeled[:150]
 
         self.X_merged = vstack([self.X_train, self.X_unlabeled]).toarray()
         self.y_merged = np.concatenate((self.y_train, self.y_unlabeled))
