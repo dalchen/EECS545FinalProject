@@ -35,8 +35,8 @@ X_unlabeled, y_unlabeled = X_train_base[training_size:], y_train_base[training_s
 
 # Testing
 testset = fetch_20newsgroups_vectorized(subset='test')
-X_test = testset.data[:1000]
-y_test = testset.target[:1000]
+X_test = testset.data[:max_samples]
+y_test = testset.target[:max_samples]
 
 # For multiprocessing
 output = Queue()
@@ -63,7 +63,10 @@ def run_test(sampler_type, X_train, y_train, X_test, y_test):
         x_samples, y_samples = np.empty((batch_size, X_train.shape[1]),float), np.empty((batch_size,),int)
         for b in range(batch_size):
             x_sample, y_sample = sampler.sample()
-            x_samples[b] = x_sample.toarray()
+            # hack
+            if sampler_type != 'hs':
+                x_sample = x_sample.toarray()
+            x_samples[b] = x_sample
             y_samples[b] = y_sample
         X_train = vstack([X_train, x_samples])
         y_train = np.append(y_train, y_samples)
