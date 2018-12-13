@@ -47,9 +47,6 @@ def calculateError(x_train, y_train, x_test, y_test, lambda_value):
 def Plotting(training_size, max_unlabeled_size, x_test, y_test, x_train_random, y_train_random, x_train_margin, y_train_margin, x_train_Hierarchical, y_train_Hierarchical,lambda_value):
 
 
-    # Initialize parameters and total number of labeled points
-    lambda_value = 10 ** (-4)  # This needs to be tuned
-
     # Initialize vectors to be used for plotting
     error_random_vector = []
     error_margin_vector = []
@@ -89,7 +86,6 @@ if __name__ == '__main__':
     print("Start")
     training_size = 2
     max_unlabeled_size = 5
-    lambda_value = 10**(-4)#This needs to be tuned
 
 
     ##################Movie data set
@@ -141,6 +137,8 @@ if __name__ == '__main__':
         x_train_Hierarchical = vstack([x_train_Hierarchical, x_sample]).toarray()
         y_train_Hierarchical = np.append(y_train_Hierarchical, y_sample)
 
-    Plotting(training_size, max_unlabeled_size, X_test, y_test, x_train_random, y_train_random, x_train_margin, y_train_margin, x_train_Hierarchical, y_train_Hierarchical, lambda_value)
+    for i in range(-8,9):
+        lambda_value = 10**(i)
+        Plotting(training_size, max_unlabeled_size, X_test, y_test, x_train_random, y_train_random, x_train_margin, y_train_margin, x_train_Hierarchical, y_train_Hierarchical, lambda_value)
 
     print("Done")
