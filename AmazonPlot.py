@@ -81,8 +81,8 @@ if __name__ == '__main__':
     '''
 
     print("Start")
-    training_size = 5#100
-    max_unlabeled_size = 5#400#20% of the data maybe
+    training_size = 100#100
+    max_unlabeled_size = 400#400#20% of the data maybe
     # lambda_value = 10**(-4)#This needs to be tuned
 
     ########################Amazon
