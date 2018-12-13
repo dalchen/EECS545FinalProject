@@ -10,7 +10,7 @@ import numpy as np
 from sklearn.datasets import fetch_20newsgroups_vectorized
 # Model function
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import accuracy_score
 from scipy.sparse import vstack
 # Plotting
 from matplotlib import pyplot as plt
@@ -21,8 +21,8 @@ from multiprocessing import Process, Queue
 
 # Parameters: Tune these!
 training_size = 25
-max_unlabeled_size = 400
-max_samples = 2000  # new parameter: reduce size of training base before split
+max_unlabeled_size = 10
+max_samples = 600  # new parameter: reduce size of training base before split
 
 # Training
 dataset = fetch_20newsgroups_vectorized(subset='train')
@@ -63,10 +63,10 @@ def run_test(sampler_type, X_train, y_train, X_test, y_test):
         y_train = np.append(y_train, np.array([y_sample]), axis=0)
         model = LogisticRegression(multi_class="multinomial", solver="lbfgs", max_iter=200)
         model.fit(X_train, y_train)
-        y_pred = model.predict(X_test)
-        mse = mean_squared_error(y_test, y_pred)
-        print(sampler_type+' number of labels: '+str(training_size+i)+ ' mse='+str(mse))
-        errors.append(mse)
+        #y_pred = model.predict(X_test)
+        error = 1 - model.score(X_test, y_test)
+        print(sampler_type+' number of labels: '+str(training_size+i)+ ' error='+str(error))
+        errors.append(error)
     output.put((sampler_type, errors))
 
 processes = [
@@ -99,8 +99,8 @@ for sampler_type in errors:
 
 plt.legend(['Random', 'Margin', 'Hierarchical'], loc='upper right')
 plt.xlabel('Number of Labels')
-plt.ylabel('Mean Squared Error')
+plt.ylabel('Error')
 #plt.show()
-plt.savefig('20newsgroups_parallel.png')
+plt.savefig('20newsgroups_parallel_'+str(max_samples)+'samples.png')
 
 print('Done')
