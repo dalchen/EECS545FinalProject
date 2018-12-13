@@ -67,8 +67,8 @@ if __name__ == '__main__':
     '''
 
     print("Start")
-    training_size = 2#100
-    max_unlabeled_size = 5#400
+    training_size = 100#100
+    max_unlabeled_size = 400#400
     # lambda_value = 10**(-4)#This needs to be tuned
 
     #Newsgroup Data
