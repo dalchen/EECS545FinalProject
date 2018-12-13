@@ -92,7 +92,6 @@ class HierarchicalSampler(Sampler):
         # Run clustering based on merged partition of data
         print('constructing tree')
 
-        # TODO: for testing purposes
         # Remove for production purposes
         #self.X_unlabeled = self.X_unlabeled[:150]
         #self.y_unlabeled = self.y_unlabeled[:150]
@@ -222,12 +221,6 @@ class HierarchicalSampler(Sampler):
             v = np.random.choice(pruning, size=None, replace=True, p=weights)
             return v
         
-        def method_2():
-            pass
-        def method_3():
-            pass
-        
-
         return method_1()
 
 
@@ -238,7 +231,8 @@ class HierarchicalSampler(Sampler):
         Therefore, the id returned should only be an unlabled one.
         Return None if all samples under this node have been sampled.
         '''
-        # TODO: use margin sampling to find a weighted random sample for better performance.
+        # Could use margin sampling to find a weighted random sample for better performance.
+        # But since we're only given a few days to work on this final project, we're not doing this :D.
         # For now, follow the algorithm.
         # Adjustment for tuning phase: always prefer training data first
         sample_ids = []
