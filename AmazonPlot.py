@@ -91,10 +91,12 @@ if __name__ == '__main__':
     tfidf = TfidfVectorizer()
     X = tfidf.fit_transform(amazon.reviewText)
     # split train and test data #overall refers to the ratings
-    x_train_base, X_test, y_train_base, y_test = train_test_split(X, amazon.overall, random_state=0)
+    x_train_base, X_test, y_train_base, y_test = train_test_split(X, amazon.overall, random_state=0, train_size = 2000)
     y_test = np.array(y_test)
     y_train_base = np.array(y_train_base)
     print('Successfully loaded the Amazon dataset into train and test set.')
+
+    print(x_train_base.size)
 
     X_train, y_train = x_train_base[:training_size], y_train_base[:training_size]
     X_unlabeled, y_unlabeled = x_train_base[training_size:], y_train_base[training_size:]
@@ -129,4 +131,5 @@ if __name__ == '__main__':
 
     for i in range(-8,9):
         lambda_value = 10**(i)
+        print("Lambda = " + str(lambda_value))
         Plotting(training_size, max_unlabeled_size, X_test, y_test, x_train_random, y_train_random, x_train_margin, y_train_margin, x_train_Hierarchical, y_train_Hierarchical, lambda_value)
