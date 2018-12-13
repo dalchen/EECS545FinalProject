@@ -93,12 +93,14 @@ for _ in range(len(processes)):
 num_samples = list(range(len(errors['rs'])))
 cy = cycler('color', ['red', 'green', 'blue'])
 plt.rc('axes', prop_cycle=cy)
-plt.plot(num_samples, errors['rs'])
-plt.plot(num_samples, errors['ms'])
-plt.plot(num_samples, errors['hs'])
+
+for sampler_type in errors:
+    plt.plot(num_samples, errors[sampler_type])
+
 plt.legend(['Random', 'Margin', 'Hierarchical'], loc='upper right')
 plt.xlabel('Number of Labels')
 plt.ylabel('Mean Squared Error')
-plt.show()
+#plt.show()
+plt.savefig('20newsgroups_parallel.png')
 
 print('Done')
